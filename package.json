@@ -1,0 +1,42 @@
+{
+  "name": "midnight-private-poll",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Anonymous yes/no polls on Midnight: public tallies, private voter identity.",
+  "license": "MIT",
+  "scripts": {
+    "compile": "compact compile contracts/private-poll.compact contracts/managed/private-poll",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "deploy": "tsx src/deploy.ts --network preprod",
+    "check-balance": "tsx src/check-balance.ts --network preprod",
+    "status": "tsx src/status.ts --network preprod",
+    "network": "tsx src/network.ts"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "0.16.0",
+    "@midnight-ntwrk/midnight-js-contracts": "4.1.1",
+    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-level-private-state-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-network-id": "4.1.1",
+    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-protocol": "4.1.1",
+    "@midnight-ntwrk/midnight-js-types": "4.1.1",
+    "@midnight-ntwrk/midnight-js-utils": "4.1.1",
+    "@midnight-ntwrk/wallet-sdk": "1.2.0",
+    "@scure/bip39": "2.2.0",
+    "rxjs": "^7.8.2",
+    "ws": "^8.21.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.23.1",
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

@@ -1,0 +1,48 @@
+# Midnight Private Poll — containerised toolchain.
+#
+# Compact has no native Windows build, so everything runs in Linux containers:
+#   dev           Node 22 + Compact compiler 0.31.1 (see Dockerfile.dev)
+#   proof-server  Midnight proof server 8.1.0, generates ZK proofs locally so
+#                 private witness data never leaves this machine.
+#
+#   docker compose up -d proof-server
+#   docker compose run --rm dev npm run compile
+
+name: midnight-private-poll
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: midnight-dev:0.31.1
+    working_dir: /app
+    volumes:
+      - .:/app
+      # Keep Linux-built node_modules out of the Windows/macOS checkout.
+      - node_modules:/app/node_modules
+    environment:
+      # Inside the compose network the proof server is reachable by name.
+      MIDNIGHT_PROOF_SERVER_URL: http://proof-server:6300
+    env_file:
+      - path: .env.preprod
+        required: false
+    stdin_open: true
+    tty: true
+
+  proof-server:
+    # Pinned to the Preprod support matrix (proof server 8.1.0).
+    image: midnightntwrk/proof-server:8.1.0
+    command: ["midnight-proof-server -v"]
+    ports:
+      - "6300:6300"
+    healthcheck:
+      # Image is distroless; /dev/tcp is a shell builtin so this works without curl.
+      test: ["CMD-SHELL", "echo > /dev/tcp/127.0.0.1/6300"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+volumes:
+  node_modules:

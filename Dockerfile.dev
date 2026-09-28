@@ -1,0 +1,16 @@
+# Midnight dev toolchain: Node 22 + Compact devtools, pinned to the Preprod support matrix.
+FROM node:22-bookworm
+
+ARG COMPACT_VERSION=0.31.1
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl ca-certificates git \
+ && rm -rf /var/lib/apt/lists/*
+
+# Install the Compact devtools (the `compact` CLI) and the pinned compiler toolchain.
+RUN curl --proto '=https' --tlsv1.2 -LsSf \
+      https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
+ENV PATH="/root/.local/bin:/root/.compact/bin:${PATH}"
+RUN compact update ${COMPACT_VERSION} && compact compile --version
+
+WORKDIR /app
