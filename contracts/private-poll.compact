@@ -1,0 +1,81 @@
+// Private Poll — an anonymous yes/no poll on Midnight.
+//
+// PUBLIC (ledger, visible to everyone on-chain):
+//   - the poll question, its open/closed state and the running yes/no tallies
+//   - the organizer's *public key* (a hash, never the secret itself)
+//   - a set of nullifiers, one per ballot, used to stop double voting
+//
+// PRIVATE (witness, stays on the voter's machine):
+//   - the voter's 32-byte secret key. It is only ever used inside the ZK
+//     circuit; what reaches the chain is a one-way hash of it, and only
+//     where we explicitly call disclose().
+
+pragma language_version >= 0.23;
+
+import CompactStandardLibrary;
+
+export enum PollState { OPEN, CLOSED }
+
+// ─── Public ledger state ───────────────────────────────────────────────────────
+
+export ledger question: Opaque<"string">;
+export ledger state: PollState;
+export ledger organizer: Bytes<32>;
+export ledger yesVotes: Counter;
+export ledger noVotes: Counter;
+export ledger nullifiers: Set<Bytes<32>>;
+
+// ─── Private witness ───────────────────────────────────────────────────────────
+
+// Supplied by the DApp from local private state; never sent to the network.
+witness localSecretKey(): Bytes<32>;
+
+// ─── Constructor ───────────────────────────────────────────────────────────────
+
+constructor(pollQuestion: Opaque<"string">) {
+  // The question is meant to be public, so we disclose it on purpose.
+  question = disclose(pollQuestion);
+  state = PollState.OPEN;
+  // Only the hash of the deployer's secret key is stored; it lets the same
+  // person prove "I am the organizer" later without revealing the key.
+  organizer = disclose(organizerKey(localSecretKey()));
+}
+
+// ─── Circuits ──────────────────────────────────────────────────────────────────
+
+// Cast an anonymous ballot. `choice` is true for yes, false for no.
+export circuit vote(choice: Boolean): [] {
+  assert(state == PollState.OPEN, "Poll is closed");
+
+  // The nullifier is derived from the private secret key. Publishing it
+  // reveals nothing about the key or the voter's wallet, but the same key
+  // always produces the same nullifier, so a second vote is rejected.
+  const nul = disclose(nullifier(localSecretKey()));
+  assert(!nullifiers.member(nul), "Already voted");
+  nullifiers.insert(nul);
+
+  // The tally must be public, so the choice is disclosed deliberately.
+  if (disclose(choice)) {
+    yesVotes.increment(1);
+  } else {
+    noVotes.increment(1);
+  }
+}
+
+// Close the poll. Only the organizer (holder of the deployer's secret key)
+// can do this — proven in zero knowledge, without revealing the key.
+export circuit close(): [] {
+  assert(state == PollState.OPEN, "Poll is already closed");
+  assert(organizer == organizerKey(localSecretKey()), "Only the organizer can close the poll");
+  state = PollState.CLOSED;
+}
+
+// ─── Helpers (pure, domain-separated hashes) ───────────────────────────────────
+
+export pure circuit organizerKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "private-poll:organizer:"), sk]);
+}
+
+export pure circuit nullifier(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "private-poll:nullifier:"), sk]);
+}
