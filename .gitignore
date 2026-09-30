@@ -16,7 +16,7 @@ build/
 .env.production.local
 
 # Contract artifacts
-# contracts/managed/ is committed on purpose (circuits + keys are part of the submission)
+# managed/ is committed on purpose (circuits + keys are part of the submission)
 
 # Deployment info
 deployment.json
@@ -61,3 +61,6 @@ temp/
 
 # Local secrets for the deploy wallet
 .env.preprod
+
+# Local encrypted private state (organizer / voter secret keys)
+midnight-level-db/

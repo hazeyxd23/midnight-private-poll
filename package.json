@@ -5,12 +5,14 @@
   "description": "Anonymous yes/no polls on Midnight: public tallies, private voter identity.",
   "license": "MIT",
   "scripts": {
-    "compile": "compact compile contracts/private-poll.compact contracts/managed/private-poll",
+    "compile": "compact compile contracts/private-poll.compact managed/private-poll",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "deploy": "tsx src/deploy.ts --network preprod",
     "check-balance": "tsx src/check-balance.ts --network preprod",
     "status": "tsx src/status.ts --network preprod",
+    "deploy:preview": "tsx src/deploy.ts --network preview",
+    "status:preview": "tsx src/status.ts --network preview",
     "network": "tsx src/network.ts"
   },
   "dependencies": {

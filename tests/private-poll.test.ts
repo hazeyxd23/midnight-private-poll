@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PollState, pureCircuits } from '../contracts/managed/private-poll/contract/index.js';
+import { PollState, pureCircuits } from '../managed/private-poll/contract/index.js';
 import { createPollPrivateState } from '../src/witnesses.js';
 import { PollSimulator } from './poll-simulator.js';
 

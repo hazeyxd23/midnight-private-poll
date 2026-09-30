@@ -6,7 +6,7 @@
 // build a ZK proof, and it is never included in a transaction.
 import { randomBytes } from 'node:crypto';
 import type { WitnessContext } from '@midnight-ntwrk/compact-runtime';
-import type { Ledger } from '../contracts/managed/private-poll/contract/index.js';
+import type { Ledger } from '../managed/private-poll/contract/index.js';
 
 export type PollPrivateState = {
   readonly secretKey: Uint8Array;

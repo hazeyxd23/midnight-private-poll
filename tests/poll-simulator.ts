@@ -10,7 +10,7 @@ import {
   sampleContractAddress,
   type CircuitContext,
 } from '@midnight-ntwrk/compact-runtime';
-import { Contract, ledger, type Ledger } from '../contracts/managed/private-poll/contract/index.js';
+import { Contract, ledger, type Ledger } from '../managed/private-poll/contract/index.js';
 import { witnesses, createPollPrivateState, type PollPrivateState } from '../src/witnesses.js';
 
 const COIN_PUBLIC_KEY = '0'.repeat(64);

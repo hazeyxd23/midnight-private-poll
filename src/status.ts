@@ -7,7 +7,7 @@
 import { WebSocket } from 'ws';
 import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
 import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
-import { ledger, PollState } from '../contracts/managed/private-poll/contract/index.js';
+import { ledger, PollState } from '../managed/private-poll/contract/index.js';
 import { resolveNetwork, getDeployment } from './network';
 
 // @ts-expect-error Required for GraphQL subscriptions
