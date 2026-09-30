@@ -21,7 +21,7 @@ import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-pri
 import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config-provider';
 import { CompiledContract } from '@midnight-ntwrk/midnight-js-protocol/compact-js';
 
-import { Contract } from '../contracts/managed/private-poll/contract/index.js';
+import { Contract } from '../managed/private-poll/contract/index.js';
 import { resolveNetwork, getOrCreateWallet, formatWalletBackupNotice, recordDeployment } from './network';
 import { createWallet, persistWalletState, unshieldedToken, type WalletContext } from './wallet';
 import { witnesses, createPollPrivateState } from './witnesses';
@@ -35,7 +35,7 @@ const DUST_WAIT_TIMEOUT_MS = 10 * 60 * 1000;
 const QUESTION = process.env.POLL_QUESTION?.trim() || 'Should Midnight dApps default to private-by-design?';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-export const zkConfigPath = path.resolve(__dirname, '..', 'contracts', 'managed', 'private-poll');
+export const zkConfigPath = path.resolve(__dirname, '..', 'managed', 'private-poll');
 
 if (!fs.existsSync(path.join(zkConfigPath, 'contract', 'index.js'))) {
   console.error('\n❌ Contract not compiled! Run: npm run compile\n');
@@ -79,7 +79,7 @@ function createProviders(walletCtx: WalletContext) {
   return {
     // Private state (the organizer's secret key) is stored encrypted, locally.
     privateStateProvider: levelPrivateStateProvider({
-      privateStateStoreName: PRIVATE_STATE_STORE,
+      privateStateStoreName: `${PRIVATE_STATE_STORE}-${network}`,
       accountId: walletCtx.unshieldedKeystore.getBech32Address().toString(),
       privateStoragePasswordProvider: () => privateStatePassword,
     }),
@@ -167,10 +167,26 @@ async function main() {
   console.log('╚══════════════════════════════════════════════════════════════╝\n');
 
   const walletCtx = await createWallet({ network, networkConfig, seed: WALLET.seed });
-  console.log('  Syncing wallet with network (can take several minutes on first run)...');
-  const tick = setInterval(() => process.stdout.write('.'), 5000);
+  console.log('  Syncing wallet with network (first run can take a long time on public networks)...');
+  // Report real progress, and checkpoint sync state periodically so an
+  // interrupted run (crash, Docker restart) resumes instead of starting over.
+  const progress = walletCtx.wallet
+    .state()
+    .pipe(Rx.throttleTime(30_000))
+    .subscribe((s: any) => {
+      const pct = (p: any) => {
+        const done = p?.appliedIndex ?? p?.appliedId ?? 0n;
+        const total = p?.highestIndex ?? p?.highestTransactionId ?? 0n;
+        return total > 0n ? `${((Number(done) / Number(total)) * 100).toFixed(1)}%` : '…';
+      };
+      console.log(
+        `  [${new Date().toLocaleTimeString()}] shielded ${pct(s.shielded?.progress)} | dust ${pct(s.dust?.progress)} | unshielded ${pct(s.unshielded?.progress)}`,
+      );
+    });
+  const checkpoint = setInterval(() => void persistWalletState(network, walletCtx), 120_000);
   await walletCtx.wallet.waitForSyncedState();
-  clearInterval(tick);
+  clearInterval(checkpoint);
+  progress.unsubscribe();
   console.log('\n  ✓ Synced.\n');
   await persistWalletState(network, walletCtx);
 
